@@ -1,0 +1,15 @@
+target/
+*.class
+*.log
+*.jar
+*.war
+*.ear
+.idea/
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+.DS_Store
+hs_err_pid*
+.mvn/timing.properties
