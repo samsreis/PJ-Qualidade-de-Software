@@ -12,6 +12,19 @@ Java 21 e Maven.
 ```
 A aplicação inicia na porta 8080.
 
+## Rodar com Docker
+Requer Docker Engine e Docker Compose v2:
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Detalhes, configuração de porta e encerramento: [docs/docker.md](docs/docker.md). O container usa o H2 em memória e credenciais de demonstração; os dados são perdidos ao parar.
+
+## Comandos e exemplos
+O [Makefile](Makefile) oferece atalhos para iniciar, verificar e empacotar a aplicação. Exemplos HTTP para a extensão REST Client do VS Code estão em [requests/reservas.http](requests/reservas.http).
+
 ## Como rodar testes
 ```bash
 ./mvnw -B verify

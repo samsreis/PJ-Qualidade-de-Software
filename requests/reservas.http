@@ -1,0 +1,28 @@
+@baseUrl = http://localhost:8080
+@solicitanteAuth = Basic c29saWNpdGFudGVAdGVzdGUuY29tOjEyMw==
+@materialId = 2
+@salaId = 1
+@professorId = 1
+
+### Listar materiais
+GET {{baseUrl}}/api/materiais
+Authorization: {{solicitanteAuth}}
+
+### Criar reserva com duas unidades de material
+# Ajuste o intervalo para uma data futura antes de enviar.
+POST {{baseUrl}}/reservas
+Authorization: {{solicitanteAuth}}
+Content-Type: application/json
+
+{
+  "inicio": "2026-12-01T10:00:00",
+  "fim": "2026-12-01T11:00:00",
+  "quantidadeMaterial": 2,
+  "sala": { "id": {{salaId}} },
+  "professor": { "id": {{professorId}} },
+  "material": { "id": {{materialId}} }
+}
+
+### Listar reservas
+GET {{baseUrl}}/reservas
+Authorization: {{solicitanteAuth}}
