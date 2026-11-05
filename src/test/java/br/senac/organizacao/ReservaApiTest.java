@@ -62,6 +62,7 @@ class ReservaApiTest {
 		mockMvc.perform(post("/reservas").header("Authorization", basic("solicitante@teste.com"))
 			.contentType(MediaType.APPLICATION_JSON).content(reservaJson(material.getId())))
 			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.quantidadeMaterial").value(1))
 			.andExpect(jsonPath("$.solicitante.senha").doesNotExist());
 	}
 

@@ -29,6 +29,7 @@ public class Reserva {
 
 	private LocalDateTime inicio;
 	private LocalDateTime fim;
+	private int quantidadeMaterial = 1;
 
 	@Enumerated(EnumType.STRING)
 	private EstadoReserva estado;
