@@ -61,10 +61,34 @@ class ReservaApiTest {
 			.andExpect(status().isCreated());
 	}
 
+	@Test
+	void postComIntervaloInvalidoDeveRetornar400() throws Exception {
+		LocalDateTime inicio = LocalDateTime.now().plusDays(30).withSecond(0).withNano(0);
+		String json = reservaJson(null, inicio, inicio.minusHours(1));
+		mockMvc.perform(post("/reservas").header("Authorization", basic("solicitante@teste.com"))
+			.contentType(MediaType.APPLICATION_JSON).content(json))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void postComReservaSobrepostaDeveRetornar409() throws Exception {
+		String json = reservaJson(null);
+		mockMvc.perform(post("/reservas").header("Authorization", basic("solicitante@teste.com"))
+			.contentType(MediaType.APPLICATION_JSON).content(json))
+			.andExpect(status().isCreated());
+		mockMvc.perform(post("/reservas").header("Authorization", basic("solicitante@teste.com"))
+			.contentType(MediaType.APPLICATION_JSON).content(json))
+			.andExpect(status().isConflict());
+	}
+
 	private String reservaJson(Long materialId) {
 		LocalDateTime inicio = LocalDateTime.now().plusDays(30).withSecond(0).withNano(0);
+		return reservaJson(materialId, inicio, inicio.plusHours(1));
+	}
+
+	private String reservaJson(Long materialId, LocalDateTime inicio, LocalDateTime fim) {
 		String material = materialId == null ? "" : ",\"material\":{\"id\":" + materialId + "}";
-		return "{\"inicio\":\"" + inicio + "\",\"fim\":\"" + inicio.plusHours(1) + "\",\"sala\":{\"id\":"
+		return "{\"inicio\":\"" + inicio + "\",\"fim\":\"" + fim + "\",\"sala\":{\"id\":"
 			+ salaRepository.findAll().get(0).getId() + "},\"professor\":{\"id\":" + professorRepository.findAll().get(0).getId() + "}" + material + "}";
 	}
 
