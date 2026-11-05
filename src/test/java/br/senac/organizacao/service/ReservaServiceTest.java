@@ -4,9 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 import br.senac.organizacao.domain.Material;
 import br.senac.organizacao.domain.Professor;
@@ -82,14 +85,68 @@ class ReservaServiceTest {
 		LocalDateTime fim = inicio.plusHours(1);
 		Material material = new Material();
 		material.setId(3L);
+		material.setQuantidade(1);
 		Reserva reserva = new Reserva();
 		reserva.setInicio(inicio);
 		reserva.setFim(fim);
 		reserva.setMaterial(material);
-		when(reservaRepository.existsByMaterial_IdAndEstadoInAndInicioBeforeAndFimAfter(eq(3L), anyCollection(), eq(fim), eq(inicio))).thenReturn(true);
+		Reserva existente = new Reserva();
+		existente.setInicio(inicio);
+		existente.setFim(fim);
+		when(materialRepository.findByIdForUpdate(eq(3L))).thenReturn(Optional.of(material));
+		when(reservaRepository.findReservasAtivasPorMaterialNoIntervalo(eq(3L), anyCollection(), eq(fim), eq(inicio), isNull()))
+			.thenReturn(List.of(existente));
 
 		ResponseStatusException erro = assertThrows(ResponseStatusException.class, () -> reservaService.criar(reserva));
 
 		assertEquals(HttpStatus.CONFLICT, erro.getStatusCode());
+	}
+
+	@Test
+	void capacidadeDeMaterialConsideraPicoDeUsoNoIntervalo() {
+		LocalDateTime inicio = LocalDateTime.of(2026, 12, 1, 10, 0);
+		LocalDateTime fim = inicio.plusHours(3);
+		Material material = new Material();
+		material.setId(4L);
+		material.setQuantidade(3);
+		Reserva reserva = new Reserva();
+		reserva.setInicio(inicio);
+		reserva.setFim(fim);
+		reserva.setMaterial(material);
+		reserva.setQuantidadeMaterial(1);
+		Reserva primeiraExistente = reservaMaterial(inicio, inicio.plusHours(1), material, 2);
+		Reserva segundaExistente = reservaMaterial(inicio.plusHours(2), fim, material, 2);
+		when(materialRepository.findByIdForUpdate(eq(4L))).thenReturn(Optional.of(material));
+		when(reservaRepository.findReservasAtivasPorMaterialNoIntervalo(eq(4L), anyCollection(), eq(fim), eq(inicio), isNull()))
+			.thenReturn(List.of(primeiraExistente, segundaExistente));
+
+		reservaService.criar(reserva);
+	}
+
+	@Test
+	void somaDeQuantidadeNaoEstouraLimiteDeInteiro() {
+		LocalDateTime inicio = LocalDateTime.of(2026, 12, 1, 10, 0);
+		LocalDateTime fim = inicio.plusHours(1);
+		Material material = new Material();
+		material.setId(5L);
+		material.setQuantidade(Integer.MAX_VALUE);
+		Reserva reserva = reservaMaterial(inicio, fim, material, 1);
+		Reserva existente = reservaMaterial(inicio, fim, material, Integer.MAX_VALUE);
+		when(materialRepository.findByIdForUpdate(eq(5L))).thenReturn(Optional.of(material));
+		when(reservaRepository.findReservasAtivasPorMaterialNoIntervalo(eq(5L), anyCollection(), eq(fim), eq(inicio), isNull()))
+			.thenReturn(List.of(existente));
+
+		ResponseStatusException erro = assertThrows(ResponseStatusException.class, () -> reservaService.criar(reserva));
+
+		assertEquals(HttpStatus.CONFLICT, erro.getStatusCode());
+	}
+
+	private Reserva reservaMaterial(LocalDateTime inicio, LocalDateTime fim, Material material, int quantidade) {
+		Reserva reserva = new Reserva();
+		reserva.setInicio(inicio);
+		reserva.setFim(fim);
+		reserva.setMaterial(material);
+		reserva.setQuantidadeMaterial(quantidade);
+		return reserva;
 	}
 }
