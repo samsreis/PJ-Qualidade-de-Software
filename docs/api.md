@@ -11,7 +11,7 @@ Autenticação por HTTP Basic usando e-mail e senha. Os corpos usam as entidades
 | DELETE | `/api/salas/{id}`, `/api/professores/{id}`, `/api/materiais/{id}` | ADMIN | 204; 401 sem autenticação, 403 sem permissão |
 | POST | `/reservas` | Autenticados; material restrito: RESPONSAVEL ou ADMIN | 201; 400 intervalo inválido, 403 material restrito, 404 material inexistente, 409 conflito, 401 sem autenticação |
 | GET | `/reservas` | Autenticados | 200; 401 sem autenticação |
-| PUT | `/reservas/{id}` | Dono autenticado | 200; 401 sem autenticação, 403 outro dono, 404 inexistente |
+| PUT | `/reservas/{id}` | Dono autenticado | 200; 400 intervalo inválido, 401 sem autenticação, 403 outro dono/material restrito, 404 inexistente/material inexistente, 409 conflito |
 | DELETE | `/reservas/{id}` | Dono autenticado | 200; 401 sem autenticação, 403 outro dono, 404 inexistente, 409 estado não removível |
 
 ## Reservas
@@ -30,7 +30,7 @@ Exemplo de POST:
 }
 ```
 
-`material` é opcional. Se for restrito, apenas RESPONSAVEL ou ADMIN pode reservá-lo. PUT e DELETE exigem que o usuário autenticado seja o dono; DELETE só permite estados `SOLICITADA` e `APROVADA`.
+`material` é opcional. Se for restrito, apenas RESPONSAVEL ou ADMIN pode reservá-lo. PUT e DELETE exigem que o usuário autenticado seja o dono. O PUT atualiza horário e recursos, reaplica as regras de conflito e acesso a material restrito, e preserva solicitante e estado atuais. DELETE só permite estados `SOLICITADA` e `APROVADA`. Senhas nunca são incluídas nas respostas JSON.
 
 ## Recursos
 

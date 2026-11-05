@@ -7,4 +7,6 @@
 | Sobreposição de sala | `ReservaServiceTest.sobreposicaoDeSalaDeveLancarConflito` |
 | Dupla reserva concorrente | `ConcorrenciaTest.apenasUmaReservaConcorrenteDeveSerCriada` |
 | Material restrito | `ReservaApiTest.postComSolicitanteEMaterialRestritoDeveRetornar403` |
-| Estados da reserva | Sem teste |
+| Conflito ao atualizar reserva | `ReservaApiTest.putComReservaSobrepostaDeveRetornar409` |
+| Hash de senha não exposto | `ReservaApiTest.postValidoDeveRetornar201` |
+| Estado e solicitante preservados na atualização | `ReservaApiTest.putValidoPreservaEstadoEPermiteManterMesmoHorario` |
