@@ -16,3 +16,6 @@
 | Estoque respeitado ao atualizar | `ReservaApiTest.putRecalculaEstoqueComQuantidadeAtualizada` |
 | Estoque respeitado sob concorrência | `ConcorrenciaTest.estoqueDeUmaUnidadeNaoPodeSerExcedidoPorRequisicoesConcorrentes` |
 | Soma sem overflow | `ReservaServiceTest.somaDeQuantidadeNaoEstouraLimiteDeInteiro` |
+| GET de recurso exige autenticação | `RecursoSegurancaApiTest.listarSalasSemAutenticacaoRetorna401` |
+| Escrita de recurso exige perfil ADMIN | `RecursoSegurancaApiTest.solicitanteNaoPodeCriarSala` |
+| ADMIN pode criar recurso | `RecursoSegurancaApiTest.administradorPodeCriarSala` |

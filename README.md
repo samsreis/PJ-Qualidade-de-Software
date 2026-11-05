@@ -24,6 +24,10 @@ Detalhes, configuração de porta e encerramento: [docs/docker.md](docs/docker.m
 
 ## Comandos e exemplos
 O [Makefile](Makefile) oferece atalhos para iniciar, verificar e empacotar a aplicação. Exemplos HTTP para a extensão REST Client do VS Code estão em [requests/reservas.http](requests/reservas.http).
+Exemplos CRUD de salas, professores e materiais: [requests/recursos.http](requests/recursos.http). Visão das camadas: [docs/architecture.md](docs/architecture.md).
+
+## Verificação no GitHub
+O workflow manual `Verify` está disponível em **Actions** e executa `./mvnw -B verify` com Java 21 quando acionado.
 
 ## Como rodar testes
 ```bash

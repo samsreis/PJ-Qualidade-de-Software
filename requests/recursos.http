@@ -1,0 +1,27 @@
+@baseUrl = http://localhost:8080
+@solicitanteAuth = Basic c29saWNpdGFudGVAdGVzdGUuY29tOjEyMw==
+@adminAuth = Basic YWRtaW5AdGVzdGUuY29tOjEyMw==
+
+### Consultar salas como usuario autenticado
+GET {{baseUrl}}/api/salas
+Authorization: {{solicitanteAuth}}
+
+### Criar sala como administrador
+POST {{baseUrl}}/api/salas
+Authorization: {{adminAuth}}
+Content-Type: application/json
+
+{
+  "nome": "Sala de demonstracao",
+  "capacidade": 24,
+  "localizacao": "Bloco C",
+  "tipo": "Aula"
+}
+
+### Consultar professores como usuario autenticado
+GET {{baseUrl}}/api/professores
+Authorization: {{solicitanteAuth}}
+
+### Consultar materiais como usuario autenticado
+GET {{baseUrl}}/api/materiais
+Authorization: {{solicitanteAuth}}
