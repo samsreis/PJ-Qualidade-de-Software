@@ -10,3 +10,9 @@
 | Conflito ao atualizar reserva | `ReservaApiTest.putComReservaSobrepostaDeveRetornar409` |
 | Hash de senha não exposto | `ReservaApiTest.postValidoDeveRetornar201` |
 | Estado e solicitante preservados na atualização | `ReservaApiTest.putValidoPreservaEstadoEPermiteManterMesmoHorario` |
+| Estoque máximo por intervalo | `ReservaApiTest.postRespeitaQuantidadeDisponivelDeMaterial` |
+| Pico de uso em intervalos parciais | `ReservaServiceTest.capacidadeDeMaterialConsideraPicoDeUsoNoIntervalo` |
+| Quantidade positiva | `ReservaApiTest.postComQuantidadeMaterialNaoPositivaDeveRetornar400` |
+| Estoque respeitado ao atualizar | `ReservaApiTest.putRecalculaEstoqueComQuantidadeAtualizada` |
+| Estoque respeitado sob concorrência | `ConcorrenciaTest.estoqueDeUmaUnidadeNaoPodeSerExcedidoPorRequisicoesConcorrentes` |
+| Soma sem overflow | `ReservaServiceTest.somaDeQuantidadeNaoEstouraLimiteDeInteiro` |

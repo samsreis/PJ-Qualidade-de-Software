@@ -9,14 +9,14 @@ Autenticação por HTTP Basic usando e-mail e senha. Os corpos usam as entidades
 | POST | `/api/salas`, `/api/professores`, `/api/materiais` | ADMIN | 200; 401 sem autenticação, 403 sem permissão |
 | PUT | `/api/salas/{id}`, `/api/professores/{id}`, `/api/materiais/{id}` | ADMIN | 200; 401 sem autenticação, 403 sem permissão |
 | DELETE | `/api/salas/{id}`, `/api/professores/{id}`, `/api/materiais/{id}` | ADMIN | 204; 401 sem autenticação, 403 sem permissão |
-| POST | `/reservas` | Autenticados; material restrito: RESPONSAVEL ou ADMIN | 201; 400 intervalo inválido, 403 material restrito, 404 material inexistente, 409 conflito, 401 sem autenticação |
+| POST | `/reservas` | Autenticados; material restrito: RESPONSAVEL ou ADMIN | 201; 400 intervalo/quantidade inválidos, 403 material restrito, 404 material inexistente, 409 conflito ou estoque insuficiente, 401 sem autenticação |
 | GET | `/reservas` | Autenticados | 200; 401 sem autenticação |
-| PUT | `/reservas/{id}` | Dono autenticado | 200; 400 intervalo inválido, 401 sem autenticação, 403 outro dono/material restrito, 404 inexistente/material inexistente, 409 conflito |
+| PUT | `/reservas/{id}` | Dono autenticado | 200; 400 intervalo/quantidade inválidos, 401 sem autenticação, 403 outro dono/material restrito, 404 inexistente/material inexistente, 409 conflito ou estoque insuficiente |
 | DELETE | `/reservas/{id}` | Dono autenticado | 200; 401 sem autenticação, 403 outro dono, 404 inexistente, 409 estado não removível |
 
 ## Reservas
 
-O POST define o solicitante pelo usuário autenticado e sempre inicia a reserva em `SOLICITADA`. O intervalo precisa ter fim posterior ao início. Conflitos de horário com reservas `SOLICITADA`, `APROVADA` ou `EM_USO` retornam 409 para sala, professor ou material informado.
+O POST define o solicitante pelo usuário autenticado e sempre inicia a reserva em `SOLICITADA`. O intervalo precisa ter fim posterior ao início e `quantidadeMaterial` precisa ser positiva. Quando omitida, a quantidade solicitada é 1. Conflitos de horário com reservas `SOLICITADA`, `APROVADA` ou `EM_USO` retornam 409 para sala e professor. Para materiais, o sistema soma as quantidades simultaneamente reservadas em cada trecho do intervalo; a reserva é aceita se o pico, incluindo a nova solicitação, não ultrapassar o estoque cadastrado. O estoque é bloqueado durante a validação e gravação para evitar excedentes concorrentes.
 
 Exemplo de POST:
 
@@ -24,6 +24,7 @@ Exemplo de POST:
 {
   "inicio": "2026-12-01T10:00:00",
   "fim": "2026-12-01T11:00:00",
+  "quantidadeMaterial": 2,
   "sala": { "id": 1 },
   "professor": { "id": 1 },
   "material": { "id": 2 }
