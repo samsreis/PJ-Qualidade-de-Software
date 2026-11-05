@@ -94,6 +94,63 @@ class ReservaApiTest {
 	}
 
 	@Test
+	void postRespeitaQuantidadeDisponivelDeMaterial() throws Exception {
+		Material material = new Material();
+		material.setNome("Tripé de câmera");
+		material.setQuantidade(3);
+		material = materialRepository.save(material);
+		LocalDateTime inicio = LocalDateTime.now().plusDays(30).withSecond(0).withNano(0);
+		LocalDateTime fim = inicio.plusHours(1);
+		String autorizacao = basic("solicitante@teste.com");
+
+		mockMvc.perform(post("/reservas").header("Authorization", autorizacao).contentType(MediaType.APPLICATION_JSON)
+			.content(reservaMaterialJson(material.getId(), 2, inicio, fim)))
+			.andExpect(status().isCreated());
+		mockMvc.perform(post("/reservas").header("Authorization", autorizacao).contentType(MediaType.APPLICATION_JSON)
+			.content(reservaMaterialJson(material.getId(), 1, inicio, fim)))
+			.andExpect(status().isCreated());
+		mockMvc.perform(post("/reservas").header("Authorization", autorizacao).contentType(MediaType.APPLICATION_JSON)
+			.content(reservaMaterialJson(material.getId(), 1, inicio, fim)))
+			.andExpect(status().isConflict());
+	}
+
+	@Test
+	void postComQuantidadeMaterialNaoPositivaDeveRetornar400() throws Exception {
+		Material material = materialRepository.findAll().stream().filter(item -> !item.isRestrito()).findFirst().orElseThrow();
+		LocalDateTime inicio = LocalDateTime.now().plusDays(30).withSecond(0).withNano(0);
+
+		mockMvc.perform(post("/reservas").header("Authorization", basic("solicitante@teste.com"))
+			.contentType(MediaType.APPLICATION_JSON).content(reservaMaterialJson(material.getId(), 0, inicio, inicio.plusHours(1))))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void putRecalculaEstoqueComQuantidadeAtualizada() throws Exception {
+		Material material = new Material();
+		material.setNome("Caixa de som de teste");
+		material.setQuantidade(3);
+		material = materialRepository.save(material);
+		LocalDateTime inicio = LocalDateTime.of(2026, 12, 10, 10, 0);
+		LocalDateTime fim = inicio.plusHours(1);
+		String autorizacao = basic("solicitante@teste.com");
+		mockMvc.perform(post("/reservas").header("Authorization", autorizacao).contentType(MediaType.APPLICATION_JSON)
+			.content(reservaMaterialJson(material.getId(), 1, inicio, fim)))
+			.andExpect(status().isCreated());
+		mockMvc.perform(post("/reservas").header("Authorization", autorizacao).contentType(MediaType.APPLICATION_JSON)
+			.content(reservaMaterialJson(material.getId(), 1, inicio, fim)))
+			.andExpect(status().isCreated());
+		Reserva reservaAtualizada = reservaRepository.findAll().get(0);
+
+		mockMvc.perform(put("/reservas/" + reservaAtualizada.getId()).header("Authorization", autorizacao)
+			.contentType(MediaType.APPLICATION_JSON).content(reservaMaterialJson(material.getId(), 2, inicio, fim)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.quantidadeMaterial").value(2));
+		mockMvc.perform(put("/reservas/" + reservaAtualizada.getId()).header("Authorization", autorizacao)
+			.contentType(MediaType.APPLICATION_JSON).content(reservaMaterialJson(material.getId(), 3, inicio, fim)))
+			.andExpect(status().isConflict());
+	}
+
+	@Test
 	void putComReservaSobrepostaDeveRetornar409() throws Exception {
 		LocalDateTime inicio = LocalDateTime.now().plusDays(30).withSecond(0).withNano(0);
 		String primeira = reservaJson(null, inicio, inicio.plusHours(1));
@@ -140,6 +197,11 @@ class ReservaApiTest {
 		String material = materialId == null ? "" : ",\"material\":{\"id\":" + materialId + "}";
 		return "{\"inicio\":\"" + inicio + "\",\"fim\":\"" + fim + "\",\"sala\":{\"id\":"
 			+ salaRepository.findAll().get(0).getId() + "},\"professor\":{\"id\":" + professorRepository.findAll().get(0).getId() + "}" + material + "}";
+	}
+
+	private String reservaMaterialJson(Long materialId, int quantidade, LocalDateTime inicio, LocalDateTime fim) {
+		return "{\"inicio\":\"" + inicio + "\",\"fim\":\"" + fim + "\",\"material\":{\"id\":"
+			+ materialId + "},\"quantidadeMaterial\":" + quantidade + "}";
 	}
 
 	private String basic(String email) {
