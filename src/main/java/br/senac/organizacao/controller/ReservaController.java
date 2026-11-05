@@ -49,9 +49,7 @@ public class ReservaController {
 	@PutMapping("/{id}")
 	public Reserva atualizar(@PathVariable Long id, @RequestBody Reserva reserva) {
 		Reserva atual = dono(id);
-		reserva.setId(id);
-		reserva.setSolicitante(atual.getSolicitante());
-		return reservaRepository.save(reserva);
+		return reservaService.atualizar(atual, reserva);
 	}
 
 	@DeleteMapping("/{id}")

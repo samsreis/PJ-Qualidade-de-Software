@@ -9,6 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 	boolean existsBySala_IdAndEstadoInAndInicioBeforeAndFimAfter(Long salaId, Collection<EstadoReserva> estados, LocalDateTime fim, LocalDateTime inicio);
+	boolean existsBySala_IdAndIdNotAndEstadoInAndInicioBeforeAndFimAfter(Long salaId, Long reservaId, Collection<EstadoReserva> estados, LocalDateTime fim, LocalDateTime inicio);
 	boolean existsByProfessor_IdAndEstadoInAndInicioBeforeAndFimAfter(Long professorId, Collection<EstadoReserva> estados, LocalDateTime fim, LocalDateTime inicio);
+	boolean existsByProfessor_IdAndIdNotAndEstadoInAndInicioBeforeAndFimAfter(Long professorId, Long reservaId, Collection<EstadoReserva> estados, LocalDateTime fim, LocalDateTime inicio);
 	boolean existsByMaterial_IdAndEstadoInAndInicioBeforeAndFimAfter(Long materialId, Collection<EstadoReserva> estados, LocalDateTime fim, LocalDateTime inicio);
+	boolean existsByMaterial_IdAndIdNotAndEstadoInAndInicioBeforeAndFimAfter(Long materialId, Long reservaId, Collection<EstadoReserva> estados, LocalDateTime fim, LocalDateTime inicio);
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import br.senac.organizacao.domain.EstadoReserva;
 import br.senac.organizacao.domain.Perfil;
 import br.senac.organizacao.domain.Reserva;
+import br.senac.organizacao.domain.Usuario;
 import br.senac.organizacao.repository.MaterialRepository;
 import br.senac.organizacao.repository.ReservaRepository;
 import org.springframework.http.HttpStatus;
@@ -23,16 +24,64 @@ public class ReservaService {
 	}
 
 	public synchronized Reserva criar(Reserva r) {
-		if (!r.getFim().isAfter(r.getInicio())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-		if (r.getSala() != null && reservaRepository.existsBySala_IdAndEstadoInAndInicioBeforeAndFimAfter(r.getSala().getId(), ATIVAS, r.getFim(), r.getInicio())) throw new ResponseStatusException(HttpStatus.CONFLICT);
-		if (r.getProfessor() != null && reservaRepository.existsByProfessor_IdAndEstadoInAndInicioBeforeAndFimAfter(r.getProfessor().getId(), ATIVAS, r.getFim(), r.getInicio())) throw new ResponseStatusException(HttpStatus.CONFLICT);
-		if (r.getMaterial() != null && reservaRepository.existsByMaterial_IdAndEstadoInAndInicioBeforeAndFimAfter(r.getMaterial().getId(), ATIVAS, r.getFim(), r.getInicio())) throw new ResponseStatusException(HttpStatus.CONFLICT);
-		if (r.getMaterial() != null) {
-			var material = materialRepository.findById(r.getMaterial().getId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-			if (material.isRestrito() && r.getSolicitante().getPerfil() != Perfil.RESPONSAVEL && r.getSolicitante().getPerfil() != Perfil.ADMIN) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-			r.setMaterial(material);
-		}
+		validarIntervalo(r);
+		validarDisponibilidade(r, null);
+		validarMaterial(r);
 		r.setEstado(EstadoReserva.SOLICITADA);
 		return reservaRepository.save(r);
+	}
+
+	public synchronized Reserva atualizar(Reserva atual, Reserva alteracao) {
+		validarIntervalo(alteracao);
+		validarDisponibilidade(alteracao, atual.getId());
+		validarMaterial(alteracao, atual.getSolicitante());
+
+		atual.setInicio(alteracao.getInicio());
+		atual.setFim(alteracao.getFim());
+		atual.setSala(alteracao.getSala());
+		atual.setProfessor(alteracao.getProfessor());
+		atual.setMaterial(alteracao.getMaterial());
+		return reservaRepository.save(atual);
+	}
+
+	private void validarIntervalo(Reserva reserva) {
+		if (reserva.getInicio() == null || reserva.getFim() == null || !reserva.getFim().isAfter(reserva.getInicio())) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		}
+	}
+
+	private void validarDisponibilidade(Reserva reserva, Long reservaIdIgnorada) {
+		if (reserva.getSala() != null) {
+			boolean conflita = reservaIdIgnorada == null
+				? reservaRepository.existsBySala_IdAndEstadoInAndInicioBeforeAndFimAfter(reserva.getSala().getId(), ATIVAS, reserva.getFim(), reserva.getInicio())
+				: reservaRepository.existsBySala_IdAndIdNotAndEstadoInAndInicioBeforeAndFimAfter(reserva.getSala().getId(), reservaIdIgnorada, ATIVAS, reserva.getFim(), reserva.getInicio());
+			if (conflita) throw new ResponseStatusException(HttpStatus.CONFLICT);
+		}
+		if (reserva.getProfessor() != null) {
+			boolean conflita = reservaIdIgnorada == null
+				? reservaRepository.existsByProfessor_IdAndEstadoInAndInicioBeforeAndFimAfter(reserva.getProfessor().getId(), ATIVAS, reserva.getFim(), reserva.getInicio())
+				: reservaRepository.existsByProfessor_IdAndIdNotAndEstadoInAndInicioBeforeAndFimAfter(reserva.getProfessor().getId(), reservaIdIgnorada, ATIVAS, reserva.getFim(), reserva.getInicio());
+			if (conflita) throw new ResponseStatusException(HttpStatus.CONFLICT);
+		}
+		if (reserva.getMaterial() != null) {
+			boolean conflita = reservaIdIgnorada == null
+				? reservaRepository.existsByMaterial_IdAndEstadoInAndInicioBeforeAndFimAfter(reserva.getMaterial().getId(), ATIVAS, reserva.getFim(), reserva.getInicio())
+				: reservaRepository.existsByMaterial_IdAndIdNotAndEstadoInAndInicioBeforeAndFimAfter(reserva.getMaterial().getId(), reservaIdIgnorada, ATIVAS, reserva.getFim(), reserva.getInicio());
+			if (conflita) throw new ResponseStatusException(HttpStatus.CONFLICT);
+		}
+	}
+
+	private void validarMaterial(Reserva reserva) {
+		validarMaterial(reserva, reserva.getSolicitante());
+	}
+
+	private void validarMaterial(Reserva reserva, Usuario solicitante) {
+		if (reserva.getMaterial() == null) return;
+		var material = materialRepository.findById(reserva.getMaterial().getId())
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+		if (material.isRestrito() && solicitante.getPerfil() != Perfil.RESPONSAVEL && solicitante.getPerfil() != Perfil.ADMIN) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+		}
+		reserva.setMaterial(material);
 	}
 }

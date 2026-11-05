@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 @Data
@@ -21,6 +22,7 @@ public class Usuario {
 	@Column(unique = true)
 	private String email;
 
+	@JsonIgnore
 	private String senha;
 
 	@Enumerated(EnumType.STRING)

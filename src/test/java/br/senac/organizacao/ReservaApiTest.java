@@ -1,6 +1,8 @@
 package br.senac.organizacao;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.charset.StandardCharsets;
@@ -8,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 
 import br.senac.organizacao.domain.Material;
+import br.senac.organizacao.domain.Reserva;
 import br.senac.organizacao.repository.MaterialRepository;
 import br.senac.organizacao.repository.ReservaRepository;
 import br.senac.organizacao.repository.SalaRepository;
@@ -58,7 +61,8 @@ class ReservaApiTest {
 		Material material = materialRepository.findAll().stream().filter(item -> !item.isRestrito()).findFirst().orElseThrow();
 		mockMvc.perform(post("/reservas").header("Authorization", basic("solicitante@teste.com"))
 			.contentType(MediaType.APPLICATION_JSON).content(reservaJson(material.getId())))
-			.andExpect(status().isCreated());
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.solicitante.senha").doesNotExist());
 	}
 
 	@Test
@@ -71,6 +75,13 @@ class ReservaApiTest {
 	}
 
 	@Test
+	void postSemInicioDeveRetornar400() throws Exception {
+		mockMvc.perform(post("/reservas").header("Authorization", basic("solicitante@teste.com"))
+			.contentType(MediaType.APPLICATION_JSON).content("{\"fim\":\"2026-12-01T11:00:00\"}"))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
 	void postComReservaSobrepostaDeveRetornar409() throws Exception {
 		String json = reservaJson(null);
 		mockMvc.perform(post("/reservas").header("Authorization", basic("solicitante@teste.com"))
@@ -79,6 +90,44 @@ class ReservaApiTest {
 		mockMvc.perform(post("/reservas").header("Authorization", basic("solicitante@teste.com"))
 			.contentType(MediaType.APPLICATION_JSON).content(json))
 			.andExpect(status().isConflict());
+	}
+
+	@Test
+	void putComReservaSobrepostaDeveRetornar409() throws Exception {
+		LocalDateTime inicio = LocalDateTime.now().plusDays(30).withSecond(0).withNano(0);
+		String primeira = reservaJson(null, inicio, inicio.plusHours(1));
+		String segunda = reservaJson(null, inicio.plusHours(2), inicio.plusHours(3));
+		String autorizacao = basic("solicitante@teste.com");
+		mockMvc.perform(post("/reservas").header("Authorization", autorizacao)
+			.contentType(MediaType.APPLICATION_JSON).content(primeira))
+			.andExpect(status().isCreated());
+		mockMvc.perform(post("/reservas").header("Authorization", autorizacao)
+			.contentType(MediaType.APPLICATION_JSON).content(segunda))
+			.andExpect(status().isCreated());
+		Reserva reservaAtualizada = reservaRepository.findAll().stream()
+			.filter(reserva -> reserva.getInicio().equals(inicio.plusHours(2))).findFirst().orElseThrow();
+
+		mockMvc.perform(put("/reservas/" + reservaAtualizada.getId()).header("Authorization", autorizacao)
+			.contentType(MediaType.APPLICATION_JSON).content(primeira))
+			.andExpect(status().isConflict());
+	}
+
+	@Test
+	void putValidoPreservaEstadoEPermiteManterMesmoHorario() throws Exception {
+		LocalDateTime inicio = LocalDateTime.now().plusDays(30).withSecond(0).withNano(0);
+		String autorizacao = basic("solicitante@teste.com");
+		mockMvc.perform(post("/reservas").header("Authorization", autorizacao)
+			.contentType(MediaType.APPLICATION_JSON).content(reservaJson(null, inicio, inicio.plusHours(1))))
+			.andExpect(status().isCreated());
+		Reserva reserva = reservaRepository.findAll().get(0);
+		String alteracao = reservaJson(null, inicio, inicio.plusHours(1))
+			.replace("\"inicio\"", "\"estado\":\"CANCELADA\",\"inicio\"");
+
+		mockMvc.perform(put("/reservas/" + reserva.getId()).header("Authorization", autorizacao)
+			.contentType(MediaType.APPLICATION_JSON).content(alteracao))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.estado").value("SOLICITADA"))
+			.andExpect(jsonPath("$.solicitante.email").value("solicitante@teste.com"));
 	}
 
 	private String reservaJson(Long materialId) {
